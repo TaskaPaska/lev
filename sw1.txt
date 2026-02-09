@@ -1,0 +1,27 @@
+enable
+conf t
+hostname SW1
+vtp domain ONIANI
+vtp mode server
+
+vlan 10
+name NikaOniani1
+exit
+vlan 20
+name NikaOniani2
+exit
+
+interface g0/1
+switchport mode trunk
+exit
+
+interface fa0/1
+switchport mode trunk
+exit
+
+interface g0/2
+switchport mode trunk
+exit
+
+end
+write

@@ -1,0 +1,22 @@
+enable
+conf t
+hostname SW2
+vtp domain ONIANI
+vtp mode client
+
+interface g0/1
+switchport mode trunk
+exit
+
+interface fa0/1
+switchport mode access
+switchport access vlan 10
+exit
+
+interface fa0/2
+switchport mode access
+switchport access vlan 20
+exit
+
+end
+write

@@ -1,0 +1,26 @@
+enable
+conf t
+hostname R3
+
+interface s0/0/1
+ip address 10.0.0.6 255.255.255.252
+clock rate 64000
+no shutdown
+exit
+
+interface s0/0/0
+ip address 10.0.0.9 255.255.255.252
+no shutdown
+exit
+
+ip route 200.200.200.0 255.255.255.248 10.0.0.10
+
+router eigrp 1
+network 10.0.0.4 0.0.0.3
+network 10.0.0.8 0.0.0.3
+redistribute static
+no auto-summary
+exit
+
+end
+write

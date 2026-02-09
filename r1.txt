@@ -1,0 +1,42 @@
+enable
+conf t
+hostname Nika_Oniani
+enable secret Oniani
+
+interface s0/0/0
+ip address 10.0.0.1 255.255.255.252
+clock rate 64000
+no shutdown
+exit
+
+interface g0/0
+ip address 172.16.0.1 255.255.255.128
+no shutdown
+exit
+
+ip dhcp excluded-address 172.16.0.1 172.16.0.10
+ip dhcp pool NET_III
+network 172.16.0.0 255.255.255.128
+default-router 172.16.0.1
+dns-server 8.8.8.8
+exit
+
+access-list 10 deny host 192.168.10.2
+access-list 10 permit any
+interface g0/0
+ip access-group 10 in
+exit
+
+ip access-list extended Nika_Oniani
+deny ip host 192.168.10.18 any
+permit ip any any
+exit
+
+router eigrp 1
+network 10.0.0.0 0.0.0.3
+network 172.16.0.0 0.0.0.127
+no auto-summary
+exit
+
+end
+write
