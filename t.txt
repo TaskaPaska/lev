@@ -1,0 +1,596 @@
+Understood — keeping the physical topology exactly as you drew it: **R6 and R7 are Layer-3 switches / multilayer devices, with SW_Access_A and SW_Access_B below them as L2 access switches**, S5 behind SW_Access_A and S6 behind SW_Access_B. Let's go.
+
+Below is a complete, copy-pasteable exam solution. Read **Section 0** (IP plan) first — everything else refers back to it. At the end I give you a **"how to adapt for the midterm"** cheat sheet.
+
+---
+
+## 0. IP plan (the one thing you must keep in front of you)
+
+I'm using a predictable scheme. If the real midterm hands you different subnets, you only swap the numbers — the structure stays.
+
+### WAN point-to-point links — `10.0.X.0/30` (usable .1 and .2)
+
+| Link | Subnet | Left side .1 | Right side .2 |
+|---|---|---|---|
+| R1 – R2 | 10.0.12.0/30 | R1 | R2 |
+| R2 – R3 | 10.0.23.0/30 | R2 | R3 |
+| R3 – R4 | 10.0.34.0/30 | R3 | R4 |
+| R4 – R5 | 10.0.45.0/30 | R4 | R5 |
+| R1 – ER_A | 10.0.1A.0/30 → **10.0.110.0/30** | R1 | ER_A |
+| R1 – ER_B | **10.0.120.0/30** | R1 | ER_B |
+
+### VPN "global" (public-side) addresses assigned to ER_A and ER_B outside interfaces
+These are what R1 sees. Already covered by the /30s above (ER_A = 10.0.110.2, ER_B = 10.0.120.2).
+
+### GRE tunnel between ER_A and ER_B — `172.16.99.0/30`
+- ER_A Tunnel0 = 172.16.99.1
+- ER_B Tunnel0 = 172.16.99.2
+- Tunnel source/destination use the ER_A/ER_B outside IPs above.
+
+### Local LANs behind VPN routers — `192.168.X.0/24`
+| Segment | Subnet | Gateway | Host |
+|---|---|---|---|
+| ER_A LAN (S1) | 192.168.1.0/24 | ER_A = .1 | S1 = .10 |
+| ER_B LAN (S2) | 192.168.2.0/24 | ER_B = .1 | S2 = .10 |
+
+### Static NAT mappings on VPN routers (inside → global)
+- ER_A: S1 `192.168.1.10` → global `200.1.1.10` (ER_A advertises `200.1.1.0/24`)
+- ER_B: S2 `192.168.2.10` → global `200.1.2.10` (ER_B advertises `200.1.2.0/24`)
+
+### R3 VLAN segment (behind the EtherChannel triangle) — `192.168.30.0/24` carved into VLANs
+| VLAN | Subnet | Gateway (on R3 sub-if) | Hosts |
+|---|---|---|---|
+| VLAN 10 | 192.168.10.0/24 | R3 = .1 | S3 = .10 |
+| VLAN 20 | 192.168.20.0/24 | R3 = .1 | S4 = .10 |
+
+### R4 → L3-switch "global" advertised network — `200.2.2.0/24`
+This is the global/outside address block that R5 NATs the L3-switch LAN *into*. R4 has a static route to it pointing at R5.
+
+### R5 ↔ L3-switch LAN (the inside of R5 NAT) — `192.168.50.0/24`
+- R5 Fa0/1 = 192.168.50.254 (default gateway from R5's side — but HSRP VIP is what hosts use, see below)
+- L3-SW1 (R6) SVI VLAN 50 = 192.168.50.252
+- L3-SW2 (R7) SVI VLAN 50 = 192.168.50.253
+- **HSRP VIP = 192.168.50.1** ← this is what S5/S6 use as default gateway
+- S5 = 192.168.50.10
+- S6 = 192.168.50.20
+
+### R5 NAT pool (dynamic) + static for S6
+- Dynamic pool `200.2.2.100 – 200.2.2.200 /24` — used by S5 and any other inside host.
+- Static NAT: S6 `192.168.50.20` → `200.2.2.6`
+
+### Loopbacks (optional, but handy for router-id)
+R1=1.1.1.1, R2=2.2.2.2, R3=3.3.3.3, R4=4.4.4.4, R5=5.5.5.5, ER_A=10.10.10.10, ER_B=20.20.20.20, R6=6.6.6.6, R7=7.7.7.7
+
+---
+
+## 1. Physical-to-logical summary
+
+```
+  [S1 192.168.1.10]               [S2 192.168.2.10]
+         |                               |
+    (192.168.1.0/24)               (192.168.2.0/24)
+         |                               |
+       [ER_A]=======GRE Tunnel0=======[ER_B]     (172.16.99.0/30, RIP inside tunnel)
+      10.0.110.2                    10.0.120.2
+         \                              /
+          \  10.0.110.0/30             / 10.0.120.0/30
+           \                          /
+            \________[ R1 ]_________/
+                       |
+                 10.0.12.0/30
+                       |
+                     [ R2 ]
+                       |
+                 10.0.23.0/30
+                       |
+                     [ R3 ] ── Fa0/1.10 / .20 (VLANs 10,20 trunked)
+                       |                  \
+                 10.0.34.0/30          [SW_Server] ═PC1═ [SW_Client1] ═PC3═ [SW_Client2]
+                       |                       \________PC2________________/
+                     [ R4 ]                (EtherChannel triangle, STP blocks 1 link)
+                       |                      S3 in VLAN 10 off SW_Client1
+                 10.0.45.0/30                 S4 in VLAN 20 off SW_Client2
+                       |
+                     [ R5 ]
+                    /      \
+              (192.168.50.0/24 trunked down to both L3 switches)
+                  /          \
+             [L3-SW R6]═HSRP═[L3-SW R7]
+                 |                |
+           [SW_Access_A]    [SW_Access_B]
+                 |                |
+                [S5]             [S6]
+          192.168.50.10     192.168.50.20
+```
+
+---
+
+## 2. Device-by-device configuration
+
+> Every config assumes you already did `enable`, `configure terminal`, and `no shutdown` on each interface. I'll omit those to save space.
+
+### 2.1 ER_A (VPN router A)
+
+```cisco
+hostname ER_A
+!
+interface Loopback0
+ ip address 10.10.10.10 255.255.255.255
+!
+! --- LAN side (S1) ---
+interface FastEthernet0/0
+ ip address 192.168.1.1 255.255.255.0
+ ip nat inside
+!
+! --- WAN to R1 ---
+interface FastEthernet0/1
+ ip address 10.0.110.2 255.255.255.252
+ ip nat outside
+!
+! --- GRE tunnel to ER_B ---
+interface Tunnel0
+ ip address 172.16.99.1 255.255.255.252
+ tunnel source FastEthernet0/1
+ tunnel destination 10.0.120.2
+ ! GRE is the default mode, no extra command needed
+!
+! --- RIP for internal (LAN + tunnel) ---
+router rip
+ version 2
+ no auto-summary
+ network 192.168.1.0
+ network 172.16.0.0
+!
+! --- Default route to R1 ---
+ip route 0.0.0.0 0.0.0.0 10.0.110.1
+!
+! --- Static NAT: S1 inside -> global ---
+ip nat inside source static 192.168.1.10 200.1.1.10
+```
+
+### 2.2 ER_B (VPN router B) — mirror of ER_A
+
+```cisco
+hostname ER_B
+!
+interface Loopback0
+ ip address 20.20.20.20 255.255.255.255
+!
+interface FastEthernet0/0
+ ip address 192.168.2.1 255.255.255.0
+ ip nat inside
+!
+interface FastEthernet0/1
+ ip address 10.0.120.2 255.255.255.252
+ ip nat outside
+!
+interface Tunnel0
+ ip address 172.16.99.2 255.255.255.252
+ tunnel source FastEthernet0/1
+ tunnel destination 10.0.110.2
+!
+router rip
+ version 2
+ no auto-summary
+ network 192.168.2.0
+ network 172.16.0.0
+!
+ip route 0.0.0.0 0.0.0.0 10.0.120.1
+!
+ip nat inside source static 192.168.2.10 200.1.2.10
+```
+
+**Verify GRE + RIP:** from ER_A, `ping 172.16.99.2` (tunnel works) and `ping 192.168.2.1 source 192.168.1.1` (RIP route learned). From S1 ping S2: should succeed.
+
+### 2.3 R1 (OSPF core + static routes to VPN globals)
+
+```cisco
+hostname R1
+!
+interface Loopback0
+ ip address 1.1.1.1 255.255.255.255
+!
+interface FastEthernet0/0
+ ip address 10.0.110.1 255.255.255.252       ! to ER_A
+!
+interface FastEthernet0/1
+ ip address 10.0.120.1 255.255.255.252       ! to ER_B
+!
+interface FastEthernet1/0
+ ip address 10.0.12.1 255.255.255.252        ! to R2
+!
+! --- Static routes to the VPN routers' global subnets ---
+ip route 200.1.1.0 255.255.255.0 10.0.110.2
+ip route 200.1.2.0 255.255.255.0 10.0.120.2
+!
+! --- OSPF with redistributed statics ---
+router ospf 1
+ router-id 1.1.1.1
+ network 10.0.12.0  0.0.0.3   area 0
+ network 10.0.110.0 0.0.0.3   area 0
+ network 10.0.120.0 0.0.0.3   area 0
+ redistribute static subnets
+```
+
+### 2.4 R2 (pure OSPF transit)
+
+```cisco
+hostname R2
+interface Loopback0
+ ip address 2.2.2.2 255.255.255.255
+interface Fa0/0
+ ip address 10.0.12.2 255.255.255.252
+interface Fa0/1
+ ip address 10.0.23.1 255.255.255.252
+router ospf 1
+ router-id 2.2.2.2
+ network 10.0.12.0 0.0.0.3 area 0
+ network 10.0.23.0 0.0.0.3 area 0
+```
+
+### 2.5 R3 (OSPF + router-on-a-stick for VLANs 10/20)
+
+```cisco
+hostname R3
+interface Loopback0
+ ip address 3.3.3.3 255.255.255.255
+!
+interface Fa0/0
+ ip address 10.0.23.2 255.255.255.252     ! to R2
+!
+interface Fa0/1
+ no ip address
+ no shutdown
+!
+interface Fa0/1.10
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+!
+interface Fa0/1.20
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+!
+interface Fa1/0
+ ip address 10.0.34.1 255.255.255.252     ! to R4
+!
+router ospf 1
+ router-id 3.3.3.3
+ network 10.0.23.0   0.0.0.3  area 0
+ network 10.0.34.0   0.0.0.3  area 0
+ network 192.168.10.0 0.0.0.255 area 0
+ network 192.168.20.0 0.0.0.255 area 0
+```
+
+### 2.6 The three L2 switches behind R3 — EtherChannel + VLANs
+
+On **SW_Server** (trunks to R3 and to both client switches):
+
+```cisco
+hostname SW_Server
+vlan 10
+ name VLAN10
+vlan 20
+ name VLAN20
+!
+! --- Port-channel to SW_Client1 (Po1) ---
+interface range Fa0/1 - 2
+ channel-group 1 mode active        ! LACP
+interface Port-channel1
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+!
+! --- Port-channel to SW_Client2 (Po2) ---
+interface range Fa0/3 - 4
+ channel-group 2 mode active
+interface Port-channel2
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+!
+! --- Uplink to R3 (trunk, no etherchannel needed unless you want one) ---
+interface Fa0/24
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+```
+
+On **SW_Client1** (hosts S3 in VLAN 10):
+
+```cisco
+hostname SW_Client1
+vlan 10
+vlan 20
+!
+interface range Fa0/1 - 2
+ channel-group 1 mode active
+interface Port-channel1
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+!
+interface range Fa0/3 - 4
+ channel-group 3 mode active
+interface Port-channel3
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+!
+interface Fa0/10
+ switchport mode access
+ switchport access vlan 10           ! S3
+```
+
+On **SW_Client2** (hosts S4 in VLAN 20):
+
+```cisco
+hostname SW_Client2
+vlan 10
+vlan 20
+!
+interface range Fa0/1 - 2
+ channel-group 2 mode active
+interface Port-channel2
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+!
+interface range Fa0/3 - 4
+ channel-group 3 mode active
+interface Port-channel3
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+!
+interface Fa0/10
+ switchport mode access
+ switchport access vlan 20           ! S4
+```
+
+> Note: Because we have a triangle of port-channels, STP will block **one** of the three logical links. That's expected and correct. If Packet Tracer complains about `mode active` (LACP) on the model you have, use `mode desirable` (PAgP) or `mode on` (static) — just keep it **consistent on both ends of each Po**.
+
+### 2.7 R4 (OSPF + static route to L3-switch global network, redistributed)
+
+```cisco
+hostname R4
+interface Loopback0
+ ip address 4.4.4.4 255.255.255.255
+!
+interface Fa0/0
+ ip address 10.0.34.2 255.255.255.252   ! to R3
+interface Fa0/1
+ ip address 10.0.45.1 255.255.255.252   ! to R5
+!
+! --- Static route to the L3-switch LAN global block ---
+ip route 200.2.2.0 255.255.255.0 10.0.45.2
+!
+router ospf 1
+ router-id 4.4.4.4
+ network 10.0.34.0 0.0.0.3 area 0
+ network 10.0.45.0 0.0.0.3 area 0
+ redistribute static subnets
+```
+
+### 2.8 R5 (default route to R4, routing with L3 switches, NAT)
+
+Pick **OSPF area 0** between R5 and the L3 switches to keep things uniform.
+
+```cisco
+hostname R5
+interface Loopback0
+ ip address 5.5.5.5 255.255.255.255
+!
+interface Fa0/0
+ ip address 10.0.45.2 255.255.255.252        ! to R4
+ ip nat outside
+!
+interface Fa0/1
+ ip address 192.168.50.254 255.255.255.0     ! to L3 switches (same VLAN 50)
+ ip nat inside
+!
+! --- Default route to R4 ---
+ip route 0.0.0.0 0.0.0.0 10.0.45.1
+!
+! --- Dynamic OSPF with L3 switches; inject the default into OSPF ---
+router ospf 1
+ router-id 5.5.5.5
+ network 192.168.50.0 0.0.0.255 area 0
+ default-information originate
+!
+! --- NAT ---
+access-list 10 permit 192.168.50.0 0.0.0.255
+ip nat pool GLOBAL_POOL 200.2.2.100 200.2.2.200 netmask 255.255.255.0
+ip nat inside source list 10 pool GLOBAL_POOL overload
+!
+! --- Static NAT for S6 ---
+ip nat inside source static 192.168.50.20 200.2.2.6
+```
+
+### 2.9 R6 and R7 — Layer-3 switches with HSRP
+
+On **R6 (L3-SW1, HSRP active)**:
+
+```cisco
+hostname R6
+ip routing                          ! enable L3 on multilayer switch
+!
+vlan 50
+ name USERS
+!
+! --- Trunk down to access switches ---
+interface range Gi0/1 - 2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 50
+!
+! --- Uplink to R5 (routed port) ---
+interface Gi0/23
+ no switchport
+ ip address 192.168.50.252 255.255.255.0
+!
+! --- Link to R7 (could also be trunk for VLAN 50; here as a routed/HSRP peer via the same VLAN) ---
+interface Gi0/24
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 50
+!
+! --- Actually simpler: use an SVI for VLAN 50 instead of a routed port to R5 ---
+! Replace the two blocks above with:
+!   interface Vlan50
+!     ip address 192.168.50.252 255.255.255.0
+!     standby 1 ip 192.168.50.1
+!     standby 1 priority 110
+!     standby 1 preempt
+!
+interface Vlan50
+ ip address 192.168.50.252 255.255.255.0
+ standby 1 ip 192.168.50.1
+ standby 1 priority 110
+ standby 1 preempt
+!
+router ospf 1
+ router-id 6.6.6.6
+ network 192.168.50.0 0.0.0.255 area 0
+```
+
+On **R7 (L3-SW2, HSRP standby)**:
+
+```cisco
+hostname R7
+ip routing
+!
+vlan 50
+ name USERS
+!
+interface range Gi0/1 - 2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 50
+!
+interface Gi0/24
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 50
+!
+interface Vlan50
+ ip address 192.168.50.253 255.255.255.0
+ standby 1 ip 192.168.50.1
+ standby 1 priority 100            ! lower than R6 => standby
+ standby 1 preempt
+!
+router ospf 1
+ router-id 7.7.7.7
+ network 192.168.50.0 0.0.0.255 area 0
+```
+
+> HSRP result: hosts use **192.168.50.1** as gateway; R6 is active, R7 takes over if R6 fails.
+
+### 2.10 SW_Access_A and SW_Access_B
+
+```cisco
+hostname SW_Access_A
+vlan 50
+interface range Fa0/1 - 2            ! trunks to R6 and R7
+ switchport mode trunk
+ switchport trunk allowed vlan 50
+interface Fa0/10                     ! S5
+ switchport mode access
+ switchport access vlan 50
+```
+
+```cisco
+hostname SW_Access_B
+vlan 50
+interface range Fa0/1 - 2            ! trunks to R6 and R7
+ switchport mode trunk
+ switchport trunk allowed vlan 50
+interface Fa0/10                     ! S6
+ switchport mode access
+ switchport access vlan 50
+```
+
+### 2.11 End hosts
+
+| Host | IP | Mask | Gateway |
+|---|---|---|---|
+| S1 | 192.168.1.10 | 255.255.255.0 | 192.168.1.1 |
+| S2 | 192.168.2.10 | 255.255.255.0 | 192.168.2.1 |
+| S3 | 192.168.10.10 | 255.255.255.0 | 192.168.10.1 |
+| S4 | 192.168.20.10 | 255.255.255.0 | 192.168.20.1 |
+| S5 | 192.168.50.10 | 255.255.255.0 | **192.168.50.1** (HSRP VIP) |
+| S6 | 192.168.50.20 | 255.255.255.0 | **192.168.50.1** (HSRP VIP) |
+
+---
+
+## 3. How to verify (what the examiner will check)
+
+Run these and watch them succeed:
+
+```text
+On S1:   ping 192.168.2.10            ! S1 -> S2 through GRE tunnel (RIP)
+On S1:   ping 200.2.2.6                ! S1 -> S6 via S6's static-NAT global
+On S3:   ping 200.2.2.6
+On S5:   ping 192.168.1.10             ! reaches S1 thanks to NAT + static/OSPF
+On R1:   show ip route ospf            ! sees 10.0.34/30, 10.0.45/30, 192.168.50/24 via redistribution from R4, plus its own statics 200.1.1/24 and 200.1.2/24 redistributed
+On R4:   show ip route                 ! 200.2.2.0/24 as static, redistributed into OSPF
+On R6:   show standby brief            ! VLAN50 group 1 Active, VIP 192.168.50.1
+On ER_A: show ip nat translations      ! static + any dynamic
+On R5:   show ip nat translations      ! static for S6, pool hits for S5
+```
+
+The official success criteria from your task:
+- **S5 connected to all servers** ✔ (S5 is inside R5 NAT → reaches S1/S2 via OSPF→R1→statics→ER_A/ER_B→GRE, reaches S3/S4 via OSPF through R3)
+- **S1–S4 can ping S6** ✔ (each one's traffic hits R5's outside interface, matches the static NAT to `200.2.2.6`, which is reachable because R4's static `200.2.2.0/24 → R5` is redistributed into OSPF and thus known everywhere)
+
+---
+
+## 4. Cheat-sheet: how to solve a similar midterm fast
+
+A reliable order of operations — do them exactly in this sequence, it minimizes rework:
+
+1. **Label every device and every link** on paper. Write interface names (Fa0/0, Fa0/1...).
+2. **Make the IP table first.** One row per subnet. Fill before you touch any device. Use:
+   - `/30` for every router-to-router link
+   - `/24` for every LAN / VLAN
+   - A distinct `/24` block for each NAT "global" advertisement
+3. **Configure interfaces + IPs everywhere.** Nothing else yet. `ping` each direct neighbor.
+4. **Bring up the IGP (OSPF).** One `router ospf 1` per router, `network ... area 0` for every interface that participates. Verify `show ip ospf neighbor` and `show ip route ospf`.
+5. **Add the GRE tunnel** (source/destination use the already-working WAN IPs). Put a `/30` on `Tunnel0` on each side.
+6. **Add RIP** only on the VPN routers, include the LAN networks and the tunnel's `172.16.0.0` network. Verify RIP routes appear across the tunnel.
+7. **Static & default routes:** VPN routers get a default toward R1; R1 gets statics to each VPN global; R4 gets static to L3-switch global; R5 gets default to R4.
+8. **Redistribute statics into OSPF** on the routers that own them (`redistribute static subnets`). On R5 use `default-information originate` to push the default into OSPF toward R6/R7.
+9. **VLANs + trunks + EtherChannel** on the L2 switches. Always define the VLAN on every switch that carries it. Keep `channel-group` **mode consistent** on both ends.
+10. **HSRP last** (it needs the SVI's IP already working). One priority higher on the "active" side, add `preempt`, `standby X ip <VIP>`. Hosts use the VIP as their gateway.
+11. **NAT last-last.** Mark `ip nat inside` / `ip nat outside` on the right interfaces. Define ACL + pool (or static). Verify with `show ip nat translations` while pinging.
+
+### Cisco commands you MUST memorize
+
+```text
+show ip interface brief
+show ip route
+show ip ospf neighbor
+show ip protocols
+show cdp neighbors
+show standby brief
+show etherchannel summary
+show interfaces trunk
+show ip nat translations
+debug ip nat             ! turn off right after!
+```
+
+### Typical gotchas under exam time pressure
+
+- Forgetting `no shutdown` on a router interface.
+- Forgetting `ip routing` on a multilayer switch — without it, L3 switch acts as L2 and HSRP/OSPF won't work.
+- Mismatched `channel-group` modes (one side `active`, other side `on`) — the port-channel stays down.
+- Forgetting `ip nat inside` / `ip nat outside` — NAT silently does nothing.
+- Forgetting `redistribute static subnets` — remote routers won't see the NAT globals.
+- `network` statement in OSPF with wrong wildcard mask — keep it simple: `/30` → `0.0.0.3`, `/24` → `0.0.0.255`.
+- In GRE: `tunnel destination` must be an address already reachable *before* the tunnel comes up (i.e., the underlay must be fine first).
+
+### If the real exam gives you different addresses
+
+Replace only:
+- Every `/30` on my WAN table with the exam's equivalents.
+- Every `/24` LAN with the exam's LAN `/24` — but keep the rule "`.1` = router/gateway, `.10/.20` = hosts, last usable = HSRP VIP if L3-switch LAN."
+- The GRE tunnel still gets its own private `/30` (you choose it, e.g., `172.16.99.0/30`), independent of the exam's assignments.
+- NAT "global" pools: use whatever the exam calls the outside network.
+
+Everything else — commands, order, structure — stays **identical**.
+
+---
+
+Good luck on the exam. If the real midterm turns out different in a specific spot (e.g., they demand EIGRP instead of OSPF, or they specify a particular NAT pool size), just tell me what changed and I'll patch only that block.
