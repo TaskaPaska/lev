@@ -1,0 +1,68 @@
+DEVICE MAP - what each name means on the diagram
+=================================================
+
+ROUTERS (all labeled on the diagram itself, all model 2911):
+  R1 - top-left router. Connects the Sw_1/VLAN block to R2.
+  R2 - top-center router (red label). The "core" - connects R1, R3, R4, R5.
+       !! NEEDS HWIC-2T serial module: it has 4 links but only 3 gig ports.
+       (power off -> drag HWIC-2T into a slot -> power on)
+  R3 - left HSRP router, under R2.
+  R4 - right HSRP router.
+  R5 - top-right router, the other end of the red serial (lightning) link.
+       !! Also needs HWIC-2T for the serial link.
+  R6 - left VPN router under R5, server S1 below it.
+  R7 - right VPN router, server S2 below it.
+
+SWITCHES:
+  Sw_1  - labeled on the diagram: the big switch under R1.
+          MUST be a 3560 (Layer 3 switch) because it hosts the VLAN
+          gateways (SVIs), DHCP and routing. All others are 2960.
+  SW_D  - my name ("Distribution"): the unlabeled middle switch under Sw_1.
+  SW_A1 - my name ("Access 1"): bottom-LEFT switch, has the PC + laptop.
+  SW_A2 - my name ("Access 2"): bottom-RIGHT switch, has the two servers.
+  SW_H1 - my name: small switch under R3 in the HSRP block.
+  SW_H2 - my name: small switch under R4, linked to SW_H1 (dashed line).
+          SW_H1 + SW_H2 need ZERO configuration. Just cable them. Their only
+          job is to make one shared LAN so R3, R4, ServerA, ServerB can all
+          see each other (HSRP requires them in the same L2 network).
+
+END DEVICES:
+  PC + Laptop (bottom left)       -> VLAN 10, address via DHCP
+  2 servers (bottom right)        -> VLAN 20, address via DHCP
+  ServerA (under SW_H1)           -> static 192.168.30.10, GW 192.168.30.1
+  ServerB (under SW_H2)           -> static 192.168.30.11, GW 192.168.30.1
+  S1 (under R6)                   -> static 192.168.60.10, GW 192.168.60.1
+  S2 (under R7)                   -> static 192.168.70.10, GW 192.168.70.1
+
+CABLES:
+  straight-through : PC->switch, server->switch, switch->router
+  crossover        : switch <-> switch
+  Serial DCE       : R2 <-> R5 (the red link). "clock rate 64000" goes on
+                     whichever side shows the little clock icon (my files
+                     assume that is R2 - move the line to R5 if reversed).
+
+ADDRESS PLAN:
+  VLAN 10          192.168.10.0/24   GW .1 (SVI on Sw_1)
+  VLAN 20          192.168.20.0/24   GW .1 (SVI on Sw_1)
+  Sw_1 - R1        10.0.0.0/30       Sw_1=.1  R1=.2
+  R1 - R2          20.0.0.0/30       R1=.1    R2=.2
+  R2 - R3          30.0.0.0/30       R2=.1    R3=.2
+  R2 - R4          30.0.0.4/30       R2=.5    R4=.6
+  HSRP LAN         192.168.30.0/24   virtualGW=.1 R3=.2 R4=.3 SrvA=.10 SrvB=.11
+  HSRP globals     40.0.0.0/24       ServerA->40.0.0.10   ServerB->40.0.0.11
+  R2 - R5 serial   50.0.0.0/30       R2=.1    R5=.2
+  R5 - R6          60.0.0.0/30       R5=.1    R6=.2
+  R5 - R7          60.0.0.4/30       R5=.5    R7=.6
+  S1 LAN           192.168.60.0/24   R6=.1  S1=.10   S1 global = 61.0.0.10
+  S2 LAN           192.168.70.0/24   R7=.1  S2=.10   S2 global = 71.0.0.10
+  GRE tunnel       172.16.0.0/30     R6=.1    R7=.2
+
+WORK ORDER + PING CHECKPOINTS (config in this order, ping before moving on):
+  1. Sw_1 + 3 switches + R1        -> PC gets DHCP address, pings 192.168.10.1
+  2. R2, R3, R4 + HSRP servers     -> VLAN PC pings 40.0.0.10
+  3. R5, R6, R7 + S1/S2 + GRE      -> S1 pings 192.168.70.10
+  4. BGP on R2 + R5                -> VLAN PC pings 61.0.0.10 (= bonus points)
+  5. ACL on R3 + R4 (always LAST, so it cannot break your debugging)
+
+FIRST DEBUG COMMAND, ALWAYS: show ip interface brief
+(shows every interface, its IP and up/down - catches wrong-port cabling fast)

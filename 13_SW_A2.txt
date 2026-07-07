@@ -1,0 +1,28 @@
+! ============================================================
+! SW_A2  (2960, bottom-RIGHT switch: two servers, VLAN 20)
+! fa0/24 -> SW_D fa0/2    fa0/23 -> SW_A1 fa0/23
+! fa0/1, fa0/2 -> the two servers
+! ============================================================
+enable
+configure terminal
+hostname SW_A2
+!
+vlan 10
+ name USERS
+vlan 20
+ name SERVERS
+exit
+!
+interface fa0/24
+ switchport mode trunk
+interface fa0/23
+ switchport mode trunk
+exit
+!
+interface range fa0/1 - 2
+ switchport mode access
+ switchport access vlan 20
+exit
+!
+end
+write memory

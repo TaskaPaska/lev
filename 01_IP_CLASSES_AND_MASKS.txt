@@ -1,0 +1,79 @@
+IP CLASSES, PRIVATE vs PUBLIC RANGES, MASK CONVENTIONS
+=======================================================
+
+CLASSES (decided by the FIRST octet only):
+
+Class A   first octet 1 - 126     default mask 255.0.0.0   (/8)
+          PRIVATE: 10.0.0.0 - 10.255.255.255        (10.0.0.0/8)
+          everything else in class A = PUBLIC
+          note: 127.x.x.x is not class A in practice - reserved for
+          loopback (127.0.0.1 = "myself"). Never assign it.
+
+Class B   first octet 128 - 191   default mask 255.255.0.0 (/16)
+          PRIVATE: 172.16.0.0 - 172.31.255.255      (172.16.0.0/12)
+          !! careful: 172.15.x.x and 172.32.x.x are PUBLIC.
+             Only second octet 16-31 is private.
+          special: 169.254.x.x = APIPA. If a PC shows 169.254.something,
+          it means DHCP FAILED -> go check trunks / DHCP pool. Free exam hint.
+
+Class C   first octet 192 - 223   default mask 255.255.255.0 (/24)
+          PRIVATE: 192.168.0.0 - 192.168.255.255    (192.168.0.0/16)
+          !! 192.167.x.x or 192.169.x.x = PUBLIC. Only 192.168. is private.
+
+Class D   first octet 224 - 239   MULTICAST. No masks, no hosts.
+          Never assign to a device. (HSRP itself uses 224.0.0.2 internally -
+          you don't configure that, just recognize it.)
+
+Class E   first octet 240 - 255   experimental/reserved. Never assign.
+
+3-SECOND PRIVATE TEST:
+  starts with 10.          -> private
+  starts with 172.16-31.   -> private
+  starts with 192.168.     -> private
+  anything else (1-223)    -> public ("global")
+
+HOW THIS MAPS TO YOUR EXAM TASK:
+  "Local" address  = private one   (that's why all LANs are 192.168.x.x)
+  "Global" address = public one    (that's why NAT targets are 40.x, 61.x, 71.x)
+  NAT's whole job = translate private (not allowed on the internet) -> public.
+  If the exam GIVES you addresses instead of "choose your own":
+  their private ones go on LANs + "ip nat inside" side,
+  their public ones go on WAN links + inside NAT statements.
+  The commands do not change AT ALL - only the numbers you type.
+
+SUBNET MASK CHEAT SHEET (prefix = full mask = usable hosts):
+  /8   255.0.0.0         16,777,214
+  /16  255.255.0.0       65,534
+  /24  255.255.255.0     254
+  /25  255.255.255.128   126
+  /26  255.255.255.192   62
+  /27  255.255.255.224   30
+  /28  255.255.255.240   14
+  /29  255.255.255.248   6
+  /30  255.255.255.252   2
+  (pattern: each step down halves the hosts; usable = 2^free_bits - 2)
+
+MY CONVENTIONS - WHICH MASK GOES WHERE AND WHY:
+
+  /30 = 255.255.255.252  -> EVERY router-to-router link.
+      A point-to-point link has exactly 2 devices, /30 gives exactly
+      2 usable addresses. Zero waste + you instantly recognize
+      "x.x.x.x/30 = that's a link, not a LAN".
+      Anatomy of 10.0.0.0/30:
+        10.0.0.0  network   (unusable)
+        10.0.0.1  host 1
+        10.0.0.2  host 2
+        10.0.0.3  broadcast (unusable)
+      /30 blocks start at multiples of 4: .0, .4, .8, .12 ...
+      (that is why the R2-R4 link is 30.0.0.4/30, not 30.0.0.2/30)
+
+  /24 = 255.255.255.0    -> EVERY LAN (VLANs, HSRP LAN, S1/S2 LANs).
+      254 hosts is plenty, and the mask sits exactly on an octet border,
+      so there is no binary math: 192.168.10.anything = inside that LAN.
+      Fast and impossible to miscalculate under exam stress.
+
+  /24 also for the "global" NAT pools (40.0.0.0/24, 61.0.0.0/24, 71.0.0.0/24)
+      - one clean static route covers the whole pool.
+
+  FIXED HABITS (so you never think about it):
+      gateway = .1     routers in HSRP = .2 and .3     servers = .10, .11

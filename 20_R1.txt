@@ -1,0 +1,36 @@
+! ============================================================
+! R1  (2911, top-left)
+! g0/0 -> Sw_1 g0/1 ("down"/LAN side = NAT inside)
+! g0/1 -> R2 g0/2   ("up"/WAN side  = NAT outside)
+! covers exam tasks 4 (routes) and 5 (NAT overload)
+! ============================================================
+enable
+configure terminal
+hostname R1
+!
+interface g0/0
+ ip address 10.0.0.2 255.255.255.252
+ ip nat inside
+ no shutdown
+interface g0/1
+ ip address 20.0.0.1 255.255.255.252
+ ip nat outside
+ no shutdown
+exit
+!
+! ----- task 4: R1 must know the way BACK to the VLANs,
+! ----- and a default route forward to R2
+ip route 192.168.10.0 255.255.255.0 10.0.0.1
+ip route 192.168.20.0 255.255.255.0 10.0.0.1
+ip route 0.0.0.0 0.0.0.0 20.0.0.2
+!
+! ----- task 5: NAT overload -----
+! ACL 1 = WHO gets translated; "overload" = all hide behind g0/1's IP
+access-list 1 permit 192.168.10.0 0.0.0.255
+access-list 1 permit 192.168.20.0 0.0.0.255
+ip nat inside source list 1 interface g0/1 overload
+!
+end
+write memory
+!
+! verify: show ip nat translations   (after pinging something from a PC)

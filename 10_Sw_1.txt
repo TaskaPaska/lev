@@ -1,0 +1,71 @@
+! ============================================================
+! Sw_1  (3560 Layer-3 switch, under R1)
+! g0/1 -> R1 g0/0 (routed port)      g0/2 -> SW_D g0/1 (trunk)
+! covers exam tasks 2, 2a, 2b, 3, 4
+! ============================================================
+enable
+configure terminal
+hostname SW1
+!
+! ----- task 2: create the VLANs -----
+vlan 10
+ name USERS
+vlan 20
+ name SERVERS
+exit
+!
+! ----- trunk down toward the other switches -----
+! (3560 requires the encapsulation line BEFORE mode trunk; 2960 does not)
+interface g0/2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ no shutdown
+exit
+!
+! ----- task 2a: VLAN gateway interfaces (SVIs) -----
+ip routing
+interface vlan 10
+ ip address 192.168.10.1 255.255.255.0
+ no shutdown
+interface vlan 20
+ ip address 192.168.20.1 255.255.255.0
+ no shutdown
+exit
+!
+! ----- task 2b: DHCP for both VLANs -----
+ip dhcp excluded-address 192.168.10.1
+ip dhcp excluded-address 192.168.20.1
+ip dhcp pool VLAN10
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+exit
+ip dhcp pool VLAN20
+ network 192.168.20.0 255.255.255.0
+ default-router 192.168.20.1
+exit
+!
+! ----- task 3: SSH -----
+! hostname + domain-name MUST exist before generating the key
+ip domain-name exam.local
+crypto key generate rsa
+! -> it asks for modulus size: type 1024 and press Enter
+username admin secret cisco123
+enable secret cisco123
+line vty 0 15
+ login local
+ transport input ssh
+exit
+!
+! ----- task 4: routed link to R1 + default route -----
+! "no switchport" turns a switch port into a router port with its own IP
+interface g0/1
+ no switchport
+ ip address 10.0.0.1 255.255.255.252
+ no shutdown
+exit
+ip route 0.0.0.0 0.0.0.0 10.0.0.2
+!
+end
+write memory
+!
+! test SSH from the PC command prompt:   ssh -l admin 192.168.10.1
