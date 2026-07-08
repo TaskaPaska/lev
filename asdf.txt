@@ -1,0 +1,364 @@
+Analog phones connected to the PSTN typically use which signal type?
+a) Loop start
+
+Which issue is prevented by using ground start signaling?
+b) Glare
+
+Which signaling type represents supervisory signaling?
+a) Off-hook signal
+
+What are two disadvantages of analog connectivity? (choose 2)
+b) Signal quality
+c) Limited calls per line
+
+Which system sends multiple voice calls over one digital circuit using time slots?
+c) TDM
+
+In T1 CAS, which bits carry signaling within each voice channel?
+d) 8th bit of every 6th frame
+
+How large is each T1 frame on a digital CAS connection?
+d) 193 bits
+
+Which time slots are used for T1 and E1 signaling with CCS? (choose 2)
+b) Time slot 16
+e) Time slot 24
+
+Which ITU standard designates international numbering plans for PSTN devices?
+b) E.164
+
+What frequency range does the Nyquist theorem accurately reproduce on the PSTN?
+c) 300–4000 Hz
+
+How much bandwidth does the audio payload of G.729a consume?
+c) 8 kbps
+
+Which of these are high-complexity codecs? (choose 2)
+b) G.729
+d) iLBC
+
+Which product would support integrated FXS ports?
+a) Cisco Unified Communications Manager Express
+
+Which signaling methods can CME use for endpoint control? (choose 2)
+a) SCCP
+b) SIP
+
+CME can connect via SIP trunk to a larger VoIP infrastructure like CUCM.
+a) True
+
+Two IP phones on a call; admin reboots the CME router. What happens?
+c) Call stays active but no hold/transfer/etc.
+
+Which component lets a CME router convert analog audio into VoIP packets?
+b) Digital Signal Processor
+
+Each Unity Express module supports a port value. What does it indicate?
+a) Concurrent calls the module supports
+
+Which CUCM feature does CUCM Business Edition NOT support?
+d) Redundancy
+
+If a CUCM Publisher server fails, what occurs?
+c) DB access becomes read-only; user features writable to Subscriber
+
+How many redundant CUCM servers does a phone support for failover (excluding SRST)?
+b) 3
+
+How many call-processing servers does Cisco support in a CUCM cluster?
+d) 8
+
+Two Unity Connection servers in active/active redundancy support how many mailboxes?
+a) 20,000
+
+What governs the number of concurrent calls on a Unity Connection server?
+b) Voicemail Ports
+
+Cisco Unified Presence supplies which capabilities? (choose 2)
+b) Enterprise IM Solution
+c) Visible status indicators of IP phone users
+
+Which is an industry standard for powering devices over an Ethernet cable?
+c) 802.3af
+
+Valid methods for powering a Cisco IP phone? (select all that apply)
+a) Power brick
+c) PoE
+
+Which terms are synonymous with a VLAN? (choose 2)
+a) IP subnet
+c) Broadcast domain
+
+Which trunking protocol connects a Cisco switch to a non-Cisco switch?
+c) 802.1Q
+
+How should you configure a port for voice+data VLANs connected to a Cisco IP phone?
+a) Access
+
+How does a device attached to a Cisco IP phone send data to the switch?
+b) Untagged
+
+Which command configures a port for voice VLAN 12?
+c) switchport voice vlan 12
+
+Which command forwards DHCP from the 172.16.1.0/24 interface to server 172.16.100.100?
+d) ip helper-address 172.16.100.100
+
+How does the switch communicate voice VLAN info after the phone boots?
+a) Through CDP
+
+Which DHCP option provides the TFTP server IP to a Cisco IP phone?
+c) Option 150
+
+Which NTP stratum number is considered the best?
+a) Stratum 0
+
+Which protocols could be used for Cisco IP phone registration? (choose 2)
+a) SCCP
+b) SIP
+
+Valid command-line interfaces to manage a CME router? (choose 3)
+a) Console connection
+d) Telnet
+e) SSH
+
+Which config mode holds core CME settings for the entire telephony system?
+b) Telephony-service configuration
+
+Which show command lists all IP phones registered with the CME router?
+b) show ephone registered
+
+Which compressed archive reinstalls all GUI support files into router flash?
+a) .TAR file
+
+Which version of CCP installs into the flash of a Cisco router?
+d) CCP Express
+
+Which is NOT necessary to configure the CME router to support CCP?
+a) Enabling write operations to flash
+
+What does the 'Connect Securely' checkbox change when adding a device to CCP?
+c) CCP uses HTTPS/SSH
+
+An unconfigured phone contacts the TFTP server. Which file is sent?
+a) XMLDefault.cnf.xml
+
+Minimum telephony-service commands before CME accepts registrations? (choose 3)
+a) ip source-address
+e) max-ephones
+g) max-dn
+
+Entering 'ephone-dn 2' from global config creates what type of ephone-dn?
+a) Single line
+
+Simplest way for an ephone-dn to answer a 4-digit ext AND a 10-digit DID?
+c) Assign a secondary 'number' command
+
+Assign DN 1000 (ephone-dn 5) to the 3rd line button on ephone 12. Correct syntax?
+d) button 3:5
+
+Which show command verifies line assignment and registration of phones?
+b) show ephone
+
+Before CCP lets you configure phones/extensions, what must you configure first?
+c) Telephony service
+
+CCP automatically saves changes to flash as you configure them.
+b) False
+
+Only required field when adding a user account in CCP?
+a) UserID
+
+How does CCP link phones and extensions together?
+b) Create a user account to link user+phone+extension
+
+Which interface type connects an analog fax machine to the VoIP network?
+a) FXS
+
+Command to use T1 channels 1–6 to the PSTN with FXO loop-start signaling?
+d) ds0-group 1 timeslots 1-6 type fxo-loop-start
+
+Dial peer type to connect to a PBX using digital T1 CAS?
+c) POTS
+
+dial-peer voice 99 pots / destination-pattern 115. / port 1/0/0. User dials 1159 — what's sent out the port?
+e) 9
+
+Default codec used by a VoIP dial peer?
+d) G.729
+
+Which destination patterns match any dialed number up to 32 digits? (choose 2)
+a) .+
+c) T
+
+After you create a translation rule, how is it applied?
+b) To a translation profile
+
+Which digit-manipulation command works under a VoIP dial peer?
+c) translation-profile
+
+Final method a router uses to match an inbound dial peer for incoming calls?
+b) dial peer 0
+
+An ephone-dn with no incoming COR list dials a dial peer with an outgoing COR list. Behavior?
+b) CME permits the call
+
+Which is NOT an area QoS can manage?
+c) Fixed delay
+
+რომელი კომანდით ხდება TFTP სერვერის IP მისამართის მიწოდება Cisco IP ტელეფონისთვის DHCP პროტოკოლის გამოყენებისას?
+a) Option 150
+
+Cisco IP ტელეფონზე მიერთებული მოწყობილობა სვიჩზე მონაცემების გადაცემისას როგორ მოახდენს მათ ტეგირებას?
+b) As untagged
+
+რომელი კომანდით უნდა მოხდეს DHCP მოთხოვნების გადაგზავნა 172.16.1.0/24 ქვექსელში → DHCP სერვერზე 172.16.100.100?
+a) ip helper-address 172.16.100.100
+
+რას წარმოადგენს VLAN? (აირჩიეთ 2)
+a) IP subnet
+c) Broadcast domain
+
+როგორ უნდა გადავიყვანოთ სვიჩის პორტი, სადაც მიერთებულია Cisco IP ტელეფონი voice და data VLAN-ებით?
+b) Access
+
+როგორ ახდენს Cisco სვიჩი voice VLAN-ის ინფორმაციის მიწოდებას Cisco IP ტელეფონზე, მისი ჩატვირთვის შემდეგ?
+b) CDP პროტოკოლის მეშვეობით
+
+ჩამოთვლილთაგან რომელი ე.წ. Trunking პროტოკოლით დაუკავშირდება Cisco სვიჩი სხვა მწარმოებლის სვიჩს?
+a) 802.1Q
+
+ჩამოთვლილთაგან რომელი კომანდით არის შესაძლებელი სვიჩის ერთერთი ინტერფეისზე voice VLAN 12-ის მხარდაჭერის გააქტიურება?
+c) switchport voice vlan 12
+
+ჩამოთვლილთაგან რომელი მეთოდი არის შესაძლებელი Cisco IP ტელეფონზე ელექტრო ენერგიის მიწოდება? (აირჩიეთ ყველა შესაძლო ვარიანტი)
+b) კვების ადაპტერი (Power brick)
+d) PoE
+
+ჩამოთვლილთაგან რომელი სტანდარტი გამოიყენება Ethernet ქსელის სადენით მოწყობილობებზე ელექტრო ენერგიის მისაწოდებლად?
+d) 802.3af
+
+ჩამოთვლილთაგან რომელი კომანდით არის შესაძლებელი კომპიუტერში პროგრამულად ჩაწერილი IP ტელეფონის (CIPC) მითითება VOIP-ის კონფიგურირებისას?
+a) type CIPC
+
+რომელი კომანდა უნდა შესრულდეს, რათა ტელეფონები (200,201,202) გავიდნენ გარეთ (destination)?
+a) destination-pattern 20.
+
+ჩამოთვლილთაგან რომელი კომანდით ხდება ტელეფონებისთვის ნომრების ავტომატურად მინიჭების სერვისის გაშვება?
+d) auto assign 1 to 2
+
+ჩამოთვლილთაგან რომელი კომანდით არის შესაძლებელი ანალოგური (ძველი ტიპის) ტელეფონის მითითება VOIP-ის კონფიგურირებისას?
+a) type ATA
+
+ჩამოთვლილთაგან რომელ ფუნქციას შეასრულებს კომანდა: dial peer voice 1 voip?
+b) VOIP პროტოკოლის გაშვება
+
+ჩამოთვლილთაგან რომელ პორტს ახდენს ე.წ. source-address მითითებას VOIP როუტერი?
+b) 2000
+
+ჩამოთვლილთაგან რომელი კომანდით უნდა გაიწეროს VOIP როუტერში პარტნიორი მარშრუტიზატორის IP 203.0.113.2 მასთან სატელეფონო სესიის დამყარებისთვის?
+a) session target ipv4:203.0.113.2
+
+ჩამოთვლილთაგან რომელი კომანდით არის შესაძლებელი IP ტელეფონების რაოდენობის მითითება მარშრუტიზატორის კონფიგურირებისას?
+b) max-ephones
+
+ჩამოთვლილთაგან რომელი კომანდებით ხდება ტელეფონზე ნომრების გაწერა?
+a) ephone-dn 2 / number 112
+
+ჩამოთვლილთაგან რომელი კომანდით არის შესაძლებელი სტანდარტული IP ტელეფონის ტიპის მითითება მარშრუტიზატორში VOIP-ის კონფიგურირებისას?
+d) ephone 1 / type 7960
+
+FreePBX სერვერის მენიუში ჩამოთვლილთაგან რომელი პარამეტრით არის შესაძლებელი სერვერზე IP მისამართის სტატიკურად მინიჭება?
+b) NONE
+
+FreePBX სერვერის მენიუში ჩამოთვლილთაგან რომელი პარამეტრით არის შესაძლებელი ქსელური დამისამართების კონფიგურაციის შეცვლა?
+d) System Admin
+
+ჩამოთვლილთაგან რომელი ბრძანების ჩაწერას მოითხოვს სისტემა ვებ ბრაუზერის ახალ ფანჯარაში სერვერის გადატვირთვის დასადასტურებლად?
+a) Reboot
+
+ჩამოთვლილთაგან რომელი ღილაკით ხდება FreePBX სისტემაში დარეგისტრირებული ელექტრონული ფოსტის გადამოწმება?
+b) Check
+
+FreePBX სერვერი რომელი პარამეტრით უზრუნველყოფს DNS ფუნქციონირებას ელმისამართებდომას ინტერნეტზე წვდომის არქონის შემთხვევაშიც?
+c) აინსტალირებს DNSMASQ-ს
+
+ჩამოთვლილთაგან რომელი ფასიანი მოდულების შეძენა არის შესაძლებელი FreePBX სისტემის აქტივაციის შემდეგ? (აირჩიეთ 3)
+b) SIPStation Trunking
+c) Commercial Modules
+e) Paid Support
+
+ჩამოთვლილთაგან რომელი IP მისამართი უნდა იყოს პირველი მითითებული DNS სერვერების სიაში ინტერნეტ კავშირის არქონის შემთხვევაშიც FreePBX სერვერის გამართულად მუშაობის უზრუნველსაყოფად?
+b) 127.0.0.1
+
+PBX ადმინისტრირების გვერდზე ჩამოთვლილთაგან რომელი მოდული არ არის წარმოდგენილი?
+c) Activate Account
+
+FreePBX სერვერის პირველადი ინსტალაციის შემდეგ, ჩამოთვლილთაგან რომელი პროტოკოლით არის მისი ქსელური მისამართის პარამეტრები დაკონფიგურირებული?
+d) DHCP
+
+FreePBX სერვერის მენიუში დროის სარტყლის დაკონფიგურირების შემდეგ სავალდებულოა თუ არა სერვერის გადატვირთვა, რათა შესვლილი პარამეტრები შესრულდეს?
+a) True
+
+FreePBX სისტემის მენიუში Extensions გრაფაში პირველადი კონფიგურაციისას რომელი SIP გაფართოება მიეთითება სასწავლო სახელმძღვანელოს რეკომენდაციის მიხედვით?
+c) Chan_SIP
+
+FreePBX სისტემაში ქართული პარამეტრებით Extension Number ველში რომელი ნომერი არის მითითებული?
+c) 4000
+
+FreePBX მენიუს რომელ გრაფაში არის შესაძლებელი ე.წ. HARD DRIVE FAILURE/Fill-UP Notification ფუნქციაში სასურველი ელექტრონული ფოსტის დამატება?
+d) Admin - System Admin - Storage
+
+FreePBX მენიუში Global Settings-ის IP მისამართების ქვემენიუში რომელი ნომერი პორტი არის მითითებული HTTP Provision Port გრაფაში?
+d) 84
+
+FreePBX მენიუში Global Settings-ის IP მისამართების ქვემენიუში რომელი ნომერი პორტი არის მითითებული RESTfull Apps Port გრაფაში?
+c) 88
+
+FreePBX Intrusion Detection სისტემაში ქართული პარამეტრებით რამდენი ცდა (Max Retry) არის დაშვებული?
+c) 8
+
+FreePBX Intrusion Detection სისტემაში ქართული პარამეტრებით რამდენი წამი არის გამოყოფილი ბლოკირებისა (BAN TIME)?
+e) 1800
+
+FreePBX მენიუში Global Settings-ის IP მისამართების ქვემენიუში რომელი ნომერი პორტი არის მითითებული Web Server Port გრაფაში?
+d) 80
+
+FreePBX Intrusion Detection სისტემაში ქართული პარამეტრებით ე.წ. Whitelist-ში რომელი IP მისამართი არის დაშვებული?
+a) 127.0.0.1
+
+FreePBX მენიუში ჩამოთვლილთაგან რომელი ღილაკით ხდება სისტემაში IP ტელეფონის სახეობის დამატება?
+b) Add Brand
+
+FreePBX სისტემის მენიუში ჩამოთვლილთაგან რომელი ღილაკით არის შესაძლებელი ახალი ტელეფონის დამატება?
+a) Add New Brand
+
+FreePBX სერვერზე Digium-ის ბრენდის ტელეფონის დამატებისას ჩამოთვლილთაგან რომელი ვერსიის ე.წ. Firmware არ არის ხელმისაწვდომი?
+d) 2.00
+
+FreePBX სერვერზე ახალი ტელეფონის დამატებისას ჩამოთვლილთაგან რომელი Provision Server Protocol შეგიძლიათ მიუთითოთ? (მონიშნეთ 2)
+b) HTTP
+e) FTP
+
+FreePBX სერვერზე განთავსებული ტელეფონის კონფიგურაციის VOIP ტელეფონში გადმოსაწერად ჩამოთვლილთაგან რომელი პარამეტრები უნდა იცოდეს ტელეფონმა სერვერის შესახებ? (მონიშნეთ 2)
+a) სერვერის IP
+c) სერვერის HTTP პორტი
+
+FreePBX სერვერის კონფიგურაციის ძირითად სახელმძღვანელოში ჩამოთვლილთაგან რომელი მოდელი არ არის წარმოდგენილი Digium ბრენდის ტელეფონების სიაში?
+e) D60
+
+FreePBX სერვერზე ახალი ტელეფონის დამატებისას ჩამოთვლილთაგან რომელი ე.წ. Destination Address არის შესაძლებელი მიუთითოთ? (მონიშნეთ 2)
+b) External
+c) Internal
+
+FreePBX სერვერზე ახალი ტელეფონის დამატებისას ჩამოთვლილთაგან რომელი დროის სარტყელიდან არის ასარჩევი ე.წ. Time Offset?
+b) GMT
+
+ჩამოთვლილთაგან რომელი გადაუდებელი დახმარების სერვისის ნომერი არ არის ხელმისაწვდომი SIPStation Free Trial account გამოყენებისას?
+a) E911
+
+FreePBX სერვერის მენიუში რომელი სახელით არის წარმოდგენილი მაგისტრალური (Trunk) პროტოკოლის არხები?
+a) SIPStation
+
+FreePBX სერვერზე ახალი ტელეფონის დამატებისას რომელი ველი არის საველდებულოდ შესავსები ტელეფონის შაბლონის შესაქმნელად?
+c) Template Name
